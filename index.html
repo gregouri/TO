@@ -843,7 +843,7 @@ function getColumns(){
       if(!compareOn) return '<td class="num">'+(r.zayav?'<span class="tag zayav">'+r.zayav+'</span>':'<span class="num-zero">·</span>')+'</td>';
       return deltaCellNum(r.zayav, r.zayav_b);
     }});
-  cols.push({k:'pctBrak', label:'% брака', numeric:true,
+  cols.push({k:'pctBrak', label:'ВСЕГО', numeric:true,
     render:function(r,maxPct){ return deltaCellPct(r.pctBrak, r.pctBrak_b, maxPct); }});
 
   if(compareOn){
