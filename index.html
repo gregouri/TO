@@ -900,8 +900,8 @@ function renderTable(){
   cols.forEach(function(c){
     var sorted = sortKey===c.k;
     var arrow = sorted ? '<span class="arrow">'+(sortDir==='desc'?'▼':'▲')+'</span>' : '';
-    // header выравнивание оставляем по левому краю (как было)
-    html+='<th data-k="'+c.k+'" class="'+(sorted?'sorted ':'')+'" style="'+(c.width?'width:'+c.width:'')+'">'+c.label+arrow+'</th>';
+    var styleStr = (c.width?'width:'+c.width+';':'') + (c.centerHead?'text-align:center;':'');
+    html+='<th data-k="'+c.k+'" class="'+(sorted?'sorted ':'')+'" style="'+styleStr+'">'+c.label+arrow+'</th>';
   });
   html+='</tr></thead><tbody>';
 
@@ -982,25 +982,25 @@ function getColumns(){
     cols.push({k:'name', label:'Наименование', render:function(r){return '<td class="name-cell" title="'+esc(r.name)+'">'+esc(r.name||'—')+'</td>';}});
     cols.push({k:'catMgr', label:'Кат. менеджер', render:function(r){return '<td class="cm-cell">'+esc(r.catMgr||'—')+'</td>';}});
   }
-  cols.push({k:'total', label:'Всего', render:function(r){ return deltaCellNum(r.total, r.total_b); }});
-  cols.push({k:'brak',  label:'Брак',
+  cols.push({k:'total', label:'Всего', centerHead:true, render:function(r){ return deltaCellNum(r.total, r.total_b); }});
+  cols.push({k:'brak',  label:'Брак', centerHead:true,
     render:function(r){
       if(!compareOn) return '<td class="num-center">'+(r.brak?'<span class="tag brak">'+r.brak+'</span>':'<span class="num-zero">·</span>')+'</td>';
       return deltaCellNum(r.brak, r.brak_b);
     }});
-  cols.push({k:'ruki', label:'Руки',
+  cols.push({k:'ruki', label:'Руки', centerHead:true,
     render:function(r){
       if(!compareOn) return '<td class="num-center">'+(r.ruki?'<span class="tag ruki">'+r.ruki+'</span>':'<span class="num-zero">·</span>')+'</td>';
       return deltaCellNum(r.ruki, r.ruki_b);
     }});
-  cols.push({k:'zayav', label:'Заявка',
+  cols.push({k:'zayav', label:'Заявка', centerHead:true,
     render:function(r){
       if(!compareOn) return '<td class="num-center">'+(r.zayav?'<span class="tag zayav">'+r.zayav+'</span>':'<span class="num-zero">·</span>')+'</td>';
       return deltaCellNum(r.zayav, r.zayav_b);
     }});
 
   if(compareOn){
-    cols.push({k:'deltaPctBrak', label:'Δ % брака',
+    cols.push({k:'deltaPctBrak', label:'Δ % брака', centerHead:true,
       render:function(r){
         var d=r.deltaPctBrak;
         var cls=Math.abs(d)<0.05?'neu':(d>0?'up':'down');
