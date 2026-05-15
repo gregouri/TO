@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Сервис · Аналитика брака по брендам и артикулам</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#fff;color:#111827;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;font-size:14px}
@@ -57,6 +58,17 @@ header{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #d7dee8;disp
 .delta.down{color:#16a34a}
 .delta.neu{color:#94a3b8}
 
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+@media (max-width:900px){ .charts-row{grid-template-columns:1fr} }
+.chart-card{background:#f8fafc;border:1px solid #d7dee8;border-radius:8px;padding:14px}
+.chart-card h3{font-size:11px;font-weight:700;color:#475569;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.chart-card h3 .hint{font-weight:400;color:#94a3b8;font-size:10px;text-transform:none;letter-spacing:0}
+.chart-card .echart{width:100%;height:320px}
+.chart-toggle{display:flex;gap:4px}
+.chart-toggle button{padding:3px 9px;background:transparent;border:1px solid #d7dee8;color:#64748b;border-radius:12px;font-size:10px;font-weight:700;cursor:pointer}
+.chart-toggle button.on{background:#0284c7;color:#fff;border-color:#0284c7}
+
 /* TABLE container */
 .section{background:#f8fafc;border:1px solid #d7dee8;border-radius:8px;padding:14px;margin-bottom:14px}
 .section-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
@@ -71,7 +83,6 @@ header{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #d7dee8;disp
 .tbl{width:100%;border-collapse:collapse;font-size:12px}
 .tbl thead{position:sticky;top:0;background:#fff;z-index:5}
 .tbl th{text-align:left;font-size:10px;color:#64748b;font-weight:700;padding:10px 8px;border-bottom:2px solid #d7dee8;white-space:nowrap;cursor:pointer;user-select:none;text-transform:uppercase;letter-spacing:0.5px;background:#fff}
-.tbl th.num{text-align:center}
 .tbl th:hover{color:#0284c7;background:#f8fafc}
 .tbl th.sorted{color:#0284c7}
 .tbl th .arrow{display:inline-block;margin-left:3px;font-size:9px}
@@ -80,7 +91,8 @@ header{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #d7dee8;disp
 .tbl tr:last-child td{border-bottom:none}
 .tbl-clickable{cursor:pointer}
 .tbl-clickable:hover td{background:#eff6ff !important}
-.num{text-align:center;font-feature-settings:'tnum';font-variant-numeric:tabular-nums;white-space:nowrap}
+.num{text-align:right;font-feature-settings:'tnum';font-variant-numeric:tabular-nums;white-space:nowrap}
+.num-center{text-align:center;font-feature-settings:'tnum';font-variant-numeric:tabular-nums;white-space:nowrap}
 .num-strong{font-weight:700;color:#111827}
 .num-blue{color:#0284c7;font-weight:700}
 .num-zero{color:#cbd5e1}
@@ -95,13 +107,8 @@ header{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #d7dee8;disp
 .tag.ruki{background:#ede9fe;color:#6d28d9}
 .tag.zayav{background:#fef3c7;color:#92400e}
 
-.pct-bar{display:inline-flex;align-items:center;gap:6px}
-.pct-bar .track{width:60px;height:5px;background:#e2e8f0;border-radius:1px;overflow:hidden;flex-shrink:0}
-.pct-bar .track > div{height:100%}
-.pct-bar .num{font-weight:700;min-width:42px;text-align:left;font-size:11px}
-
 /* compare deltas */
-.cmp-cell{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;line-height:1.2}
+.cmp-cell{display:inline-flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;line-height:1.2}
 .cmp-now{font-weight:700;color:#111827}
 .cmp-was{color:#94a3b8;font-size:10px}
 .cmp-delta{font-size:10px;font-weight:700}
@@ -131,7 +138,6 @@ header{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #d7dee8;disp
 <header>
   <div>
     <div class="logo">🔧 СЕРВИС · АНАЛИТИКА</div>
-    <div class="sub">БРАК · КРИВЫЕ РУКИ · РЕМОНТ — ПО БРЕНДАМ И АРТИКУЛАМ</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <span class="cache-badge" id="cache-info">—</span>
@@ -188,19 +194,30 @@ header{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #d7dee8;disp
   </div>
 </div>
 
-<details class="setup-help">
-  <summary>⚙ Как подключить свою таблицу</summary>
-  <div style="margin-top:8px">
-    <b>Шаг 1.</b> В исходной Google-таблице: <b>Файл → Поделиться → Опубликовать в интернете</b>. Лист — <b>«Документы сервиса»</b>. Формат — <b>CSV</b>. «Опубликовать».<br>
-    <b>Шаг 2.</b> В начале <code>&lt;script&gt;</code> заменить <code>SHEET_ID</code> и <code>GID</code>.<br>
-    <b>Альтернатива:</b> в исходной таблице открыть доступ <b>«Все, у кого есть ссылка → Читатель»</b>.
-  </div>
-</details>
 
 <div class="main">
 
   <!-- SUMMARY -->
   <div class="summary" id="summary"></div>
+
+  <!-- CHARTS ROW -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>
+        Динамика обращений
+        <span class="chart-toggle">
+          <button id="g-day"   class="" onclick="setGran('day')">день</button>
+          <button id="g-week"  class="" onclick="setGran('week')">неделя</button>
+          <button id="g-month" class="on" onclick="setGran('month')">месяц</button>
+        </span>
+      </h3>
+      <div class="echart" id="ch-trend"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Структура обращений <span class="hint">сумма по периоду A</span></h3>
+      <div class="echart" id="ch-donut"></div>
+    </div>
+  </div>
 
   <!-- TABLE SECTION -->
   <div class="section">
@@ -225,6 +242,10 @@ var GID       = '974603460';
 var CACHE_KEY = 'svc_docs_v4';
 var CACHE_TTL = 60*60*1000;
 
+var COL = {
+  brak:'#dc2626', ruki:'#7c3aed', zayav:'#ca8a04', other:'#94a3b8'
+};
+
 /* ============== STATE ============== */
 var allRows=[];
 var presetA='all';
@@ -237,8 +258,11 @@ var view='brands'; // 'brands' | 'skus' | 'docs'
 var selectedBrand=null;
 var selectedSku=null;
 var selectedSkuName='';
-var sortKey='deltaPctBrak'; // когда сравнение off — переключим автоматически
+var sortKey='brak'; // по умолчанию сортируем по абсолюту брака
 var sortDir='desc';
+
+var trendGranularity='month'; // day|week|month
+var charts={}; // echart instances
 
 var MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 var MONTHS_SHORT=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
@@ -466,9 +490,8 @@ function toggleCompare(){
   document.getElementById('cmp-toggle').textContent=compareOn?'✓ Сравнение включено':'⇄ Сравнить с другим периодом';
   document.getElementById('cmp-row').classList.toggle('show', compareOn);
   if(compareOn && !presetB) setPresetB('prev_period');
-  // в режиме сравнения сортируем по дельте, иначе — по % брака
-  if(compareOn){ sortKey='deltaPctBrak'; sortDir='desc'; }
-  else { sortKey='pctBrak'; sortDir='desc'; }
+  if(compareOn){ sortKey='deltaBrak'; sortDir='desc'; }
+  else { sortKey='brak'; sortDir='desc'; }
   render();
 }
 function setPresetB(p){
@@ -501,7 +524,7 @@ function onSearchChange(){
 
 /* ============== AGGREGATION ============== */
 function rowsInPeriod(period){
-  if(!period) return allRows.slice(); // все
+  if(!period) return allRows.slice();
   return allRows.filter(function(r){
     if(!r.date) return false;
     return r.date>=period.from && r.date<=period.to;
@@ -537,6 +560,12 @@ function aggregate(rows, keyFn, extraFn){
   return out;
 }
 
+function countByAppeal(rows){
+  var c={'Брак':0,'Руки':0,'Заявка':0,'Прочее':0};
+  rows.forEach(function(r){ c[r.appeal]++; });
+  return c;
+}
+
 function buildRows(){
   var pA=resolvePeriodA();
   var pB=resolvePeriodB();
@@ -555,7 +584,7 @@ function buildRows(){
       aggregate(rA, function(r){return r.sku;}, function(o,r){o.name=r.name; o.catMgr=r.catMgr; o.brand=r.brand;}),
       aggregate(rB, function(r){return r.sku;})
     );
-  } else { // docs — список самих обращений (без агрегации, без B)
+  } else { // docs
     return rowsA.filter(function(r){return r.brand===selectedBrand && r.sku===selectedSku;});
   }
 }
@@ -578,7 +607,6 @@ function mergeAggs(aggA, aggB){
       ruki:a?a['Руки']:0,
       zayav:a?a['Заявка']:0,
       pctBrak:a?a.pctBrak:0,
-      // B
       total_b:b?b.total:0,
       brak_b:b?b['Брак']:0,
       ruki_b:b?b['Руки']:0,
@@ -597,7 +625,12 @@ function mergeAggs(aggA, aggB){
 
 /* ============== RENDER ============== */
 function render(){
+  // dispose charts before re-render
+  Object.keys(charts).forEach(function(k){ try{ charts[k].dispose(); }catch(e){} });
+  charts={};
+
   renderSummary();
+  renderCharts();
   renderBreadcrumb();
   renderTable();
 }
@@ -623,7 +656,7 @@ function renderSummary(){
   function makeCard(label, valA, valB, kind, isPct){
     var deltaHtml='';
     if(compareOn){
-      var d = isPct ? (valA-valB) : (valA-valB);
+      var d = valA-valB;
       var dClass = Math.abs(d)<0.01 ? 'neu' : (kind==='good' ? (d>0?'down':'up') : (d>0?'up':'down'));
       var arrow = Math.abs(d)<0.01 ? '→' : (d>0?'↑':'↓');
       var dStr = isPct ? (Math.abs(d).toFixed(1)+'%') : Math.abs(d);
@@ -646,10 +679,144 @@ function renderSummary(){
   document.getElementById('summary').innerHTML=html;
 }
 
-function countByAppeal(rows){
-  var c={'Брак':0,'Руки':0,'Заявка':0,'Прочее':0};
-  rows.forEach(function(r){ c[r.appeal]++; });
-  return c;
+/* ============== CHARTS ============== */
+function setGran(g){
+  trendGranularity=g;
+  ['day','week','month'].forEach(function(k){
+    var el=document.getElementById('g-'+k);
+    if(el) el.classList.toggle('on', k===g);
+  });
+  drawTrend();
+}
+
+function renderCharts(){
+  drawTrend();
+  drawDonut();
+}
+
+function periodKey(d, gran){
+  if(!d) return '';
+  if(gran==='day') return dkey(d);
+  if(gran==='week'){
+    var dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    var day=dt.getUTCDay()||7;
+    dt.setUTCDate(dt.getUTCDate()+4-day);
+    var ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+    var w=Math.ceil((((dt-ys)/86400000)+1)/7);
+    return dt.getUTCFullYear()+'-W'+('0'+w).slice(-2);
+  }
+  return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
+}
+function periodLabelShort(key, gran){
+  if(gran==='month'){
+    var p=key.split('-');
+    return MONTHS_SHORT[+p[1]-1]+' '+p[0].slice(2);
+  }
+  if(gran==='week') return key.replace('-W','/');
+  return key.slice(5);
+}
+
+function getActiveRows(){
+  // те же фильтры, что и для summary/table — учитываем drill-down
+  var pA=resolvePeriodA();
+  var rows=applySearch(rowsInPeriod(pA));
+  if((view==='skus' || view==='docs') && selectedBrand) rows=rows.filter(function(r){return r.brand===selectedBrand;});
+  if(view==='docs' && selectedSku) rows=rows.filter(function(r){return r.sku===selectedSku;});
+  return rows;
+}
+function getActiveRowsB(){
+  if(!compareOn) return [];
+  var pB=resolvePeriodB();
+  var rows=applySearch(rowsInPeriod(pB));
+  if((view==='skus' || view==='docs') && selectedBrand) rows=rows.filter(function(r){return r.brand===selectedBrand;});
+  if(view==='docs' && selectedSku) rows=rows.filter(function(r){return r.sku===selectedSku;});
+  return rows;
+}
+
+function drawTrend(){
+  var el=document.getElementById('ch-trend'); if(!el) return;
+  if(charts.trend){ try{ charts.trend.dispose(); }catch(e){} }
+
+  var rowsA=getActiveRows();
+  var rowsB=getActiveRowsB();
+
+  function build(rows){
+    var m={};
+    rows.forEach(function(r){
+      if(!r.date) return;
+      var k=periodKey(r.date, trendGranularity);
+      if(!m[k]) m[k]={'Брак':0,'Руки':0,'Заявка':0,'Прочее':0,total:0};
+      m[k][r.appeal]++; m[k].total++;
+    });
+    return m;
+  }
+  var mA=build(rowsA), mB=build(rowsB);
+  var uniq={};
+  Object.keys(mA).forEach(function(k){uniq[k]=1;});
+  Object.keys(mB).forEach(function(k){uniq[k]=1;});
+  var keys=Object.keys(uniq).sort();
+
+  if(!keys.length){
+    el.innerHTML='<div class="empty">Нет данных за выбранный период</div>';
+    return;
+  }
+
+  var labels=keys.map(function(k){return periodLabelShort(k, trendGranularity);});
+  var sBrak=keys.map(function(k){return (mA[k]||{})['Брак']||0;});
+  var sRuki=keys.map(function(k){return (mA[k]||{})['Руки']||0;});
+  var sZayav=keys.map(function(k){return (mA[k]||{})['Заявка']||0;});
+  var sTotalB=keys.map(function(k){return (mB[k]||{}).total||0;});
+
+  var series=[
+    {name:'Брак',type:'bar',stack:'A',color:COL.brak,data:sBrak,emphasis:{focus:'series'}},
+    {name:'Руки',type:'bar',stack:'A',color:COL.ruki,data:sRuki,emphasis:{focus:'series'}},
+    {name:'Заявка',type:'bar',stack:'A',color:COL.zayav,data:sZayav,emphasis:{focus:'series'}}
+  ];
+  if(compareOn){
+    series.push({name:'Всего (период B)',type:'line',smooth:true,color:'#94a3b8',
+      lineStyle:{type:'dashed',width:2},symbol:'circle',symbolSize:5,data:sTotalB});
+  }
+
+  charts.trend=echarts.init(el);
+  charts.trend.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    legend:{bottom:0,textStyle:{fontSize:11}},
+    grid:{left:40,right:20,top:10,bottom:40},
+    xAxis:{type:'category',data:labels,axisLabel:{fontSize:10,color:'#64748b'}},
+    yAxis:{type:'value',axisLabel:{fontSize:10,color:'#64748b'}},
+    series:series
+  });
+}
+
+function drawDonut(){
+  var el=document.getElementById('ch-donut'); if(!el) return;
+  if(charts.donut){ try{ charts.donut.dispose(); }catch(e){} }
+
+  var rows=getActiveRows();
+  var c=countByAppeal(rows);
+  var data=[
+    {name:'Брак',value:c['Брак'],itemStyle:{color:COL.brak}},
+    {name:'Руки',value:c['Руки'],itemStyle:{color:COL.ruki}},
+    {name:'Заявка',value:c['Заявка'],itemStyle:{color:COL.zayav}},
+    {name:'Прочее',value:c['Прочее'],itemStyle:{color:COL.other}}
+  ].filter(function(d){return d.value>0;});
+
+  if(!data.length){
+    el.innerHTML='<div class="empty">Нет данных</div>';
+    return;
+  }
+
+  charts.donut=echarts.init(el);
+  charts.donut.setOption({
+    tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},
+    legend:{bottom:0,textStyle:{fontSize:11}},
+    series:[{
+      type:'pie',radius:['45%','75%'],center:['50%','45%'],
+      label:{formatter:'{b}\n{d}%',fontSize:11,color:'#475569'},
+      labelLine:{length:8,length2:6},
+      data:data
+    }]
+  });
 }
 
 function renderBreadcrumb(){
@@ -687,17 +854,16 @@ function renderBreadcrumb(){
   document.getElementById('tbl-title').innerHTML = titleHtml;
 }
 function goToBrands(){ view='brands'; selectedBrand=null; selectedSku=null; selectedSkuName='';
-  if(compareOn){ sortKey='deltaPctBrak'; } else { sortKey='pctBrak'; }
+  if(compareOn){ sortKey='deltaBrak'; } else { sortKey='brak'; }
   sortDir='desc';
   render();
 }
 function goToSkus(brand){ view='skus'; selectedBrand=brand; selectedSku=null; selectedSkuName='';
-  if(compareOn){ sortKey='deltaPctBrak'; } else { sortKey='pctBrak'; }
+  if(compareOn){ sortKey='deltaBrak'; } else { sortKey='brak'; }
   sortDir='desc';
   render();
 }
 function goToDocs(sku, name){ view='docs'; selectedSku=sku; selectedSkuName=name||'';
-  // в режиме документов сравнение не имеет смысла (сами строки), сортируем по дате убыв.
   sortKey='date'; sortDir='desc';
   render();
 }
@@ -706,10 +872,8 @@ function clearSearch(){ document.getElementById('search-inp').value=''; searchTe
 /* ============== TABLE ============== */
 function renderTable(){
   var rows=buildRows();
-  // фильтр пустых строк только для агрегатов (в режиме docs у нас сами строки)
   if(view!=='docs') rows=rows.filter(function(r){ return r.total>0 || r.total_b>0; });
 
-  // сортировка
   rows.sort(function(a,b){
     var va=a[sortKey], vb=b[sortKey];
     var cmp;
@@ -736,16 +900,10 @@ function renderTable(){
   cols.forEach(function(c){
     var sorted = sortKey===c.k;
     var arrow = sorted ? '<span class="arrow">'+(sortDir==='desc'?'▼':'▲')+'</span>' : '';
-    html+='<th data-k="'+c.k+'" class="'+(sorted?'sorted ':'')+(c.numeric?'num':'')+'" style="'+(c.width?'width:'+c.width:'')+'">'+c.label+arrow+'</th>';
+    // header выравнивание оставляем по левому краю (как было)
+    html+='<th data-k="'+c.k+'" class="'+(sorted?'sorted ':'')+'" style="'+(c.width?'width:'+c.width:'')+'">'+c.label+arrow+'</th>';
   });
   html+='</tr></thead><tbody>';
-
-  // максимумы для шкал в pct-bar (только для агрегатных режимов)
-  var maxPct=10;
-  if(view!=='docs'){
-    maxPct=Math.max.apply(null, rows.map(function(r){return Math.max(r.pctBrak, r.pctBrak_b||0);}));
-    if(maxPct<10) maxPct=10;
-  }
 
   rows.forEach(function(r){
     var clickable='';
@@ -757,7 +915,7 @@ function renderTable(){
       clickable=' class="tbl-clickable" onclick="goToDocs(\''+skuKey+'\',\''+nameAttr+'\')"';
     }
     html+='<tr'+clickable+'>';
-    cols.forEach(function(c){ html+=c.render(r, maxPct); });
+    cols.forEach(function(c){ html+=c.render(r); });
     html+='</tr>';
   });
   html+='</tbody></table>';
@@ -773,29 +931,16 @@ function renderTable(){
   });
 }
 
+/* Центрированные ячейки для значений */
 function deltaCellNum(now, was){
-  if(!compareOn) return '<td class="num"><span class="num-strong">'+(now||'<span class="num-zero">·</span>')+'</span></td>';
+  if(!compareOn) return '<td class="num-center"><span class="num-strong">'+(now||'<span class="num-zero">·</span>')+'</span></td>';
   var d=now-was;
-  var cls = d===0?'neu':(d>0?'up':'down'); // для брак/руки/заявка/обращений: больше = хуже (красное)
+  var cls = d===0?'neu':(d>0?'up':'down');
   var arrow = d===0?'→':(d>0?'↑':'↓');
-  return '<td class="num"><div class="cmp-cell">'+
+  return '<td class="num-center"><div class="cmp-cell">'+
     '<span class="cmp-now">'+(now||0)+'</span>'+
     '<span class="cmp-was">было '+(was||0)+'</span>'+
     '<span class="cmp-delta '+cls+'"><span class="cmp-arrow">'+arrow+'</span>'+(d===0?'0':(d>0?'+':'')+d)+'</span>'+
-    '</div></td>';
-}
-function deltaCellPct(now, was, maxPct){
-  var bar = (now/maxPct*100);
-  var col = now<10?'#16a34a':now<25?'#ca8a04':now<40?'#ea580c':'#dc2626';
-  var primary = '<div class="pct-bar"><div class="track"><div style="width:'+Math.min(100,bar)+'%;background:'+col+'"></div></div><span class="num" style="color:'+col+'">'+now.toFixed(1)+'%</span></div>';
-  if(!compareOn) return '<td>'+primary+'</td>';
-  var d=now-was;
-  var cls = Math.abs(d)<0.05?'neu':(d>0?'up':'down');
-  var arrow = Math.abs(d)<0.05?'→':(d>0?'↑':'↓');
-  return '<td><div style="display:flex;flex-direction:column;gap:2px;align-items:center">'+
-    primary+
-    '<span class="cmp-was">было '+was.toFixed(1)+'%</span>'+
-    '<span class="cmp-delta '+cls+'"><span class="cmp-arrow">'+arrow+'</span>'+(d===0?'0%':(d>0?'+':'')+d.toFixed(1)+'%')+'</span>'+
     '</div></td>';
 }
 
@@ -837,32 +982,30 @@ function getColumns(){
     cols.push({k:'name', label:'Наименование', render:function(r){return '<td class="name-cell" title="'+esc(r.name)+'">'+esc(r.name||'—')+'</td>';}});
     cols.push({k:'catMgr', label:'Кат. менеджер', render:function(r){return '<td class="cm-cell">'+esc(r.catMgr||'—')+'</td>';}});
   }
-  cols.push({k:'total', label:'Всего', numeric:true, render:function(r){ return deltaCellNum(r.total, r.total_b); }});
-  cols.push({k:'brak',  label:'Брак', numeric:true,
+  cols.push({k:'total', label:'Всего', render:function(r){ return deltaCellNum(r.total, r.total_b); }});
+  cols.push({k:'brak',  label:'Брак',
     render:function(r){
-      if(!compareOn) return '<td class="num">'+(r.brak?'<span class="tag brak">'+r.brak+'</span>':'<span class="num-zero">·</span>')+'</td>';
+      if(!compareOn) return '<td class="num-center">'+(r.brak?'<span class="tag brak">'+r.brak+'</span>':'<span class="num-zero">·</span>')+'</td>';
       return deltaCellNum(r.brak, r.brak_b);
     }});
-  cols.push({k:'ruki', label:'Руки', numeric:true,
+  cols.push({k:'ruki', label:'Руки',
     render:function(r){
-      if(!compareOn) return '<td class="num">'+(r.ruki?'<span class="tag ruki">'+r.ruki+'</span>':'<span class="num-zero">·</span>')+'</td>';
+      if(!compareOn) return '<td class="num-center">'+(r.ruki?'<span class="tag ruki">'+r.ruki+'</span>':'<span class="num-zero">·</span>')+'</td>';
       return deltaCellNum(r.ruki, r.ruki_b);
     }});
-  cols.push({k:'zayav', label:'Заявка', numeric:true,
+  cols.push({k:'zayav', label:'Заявка',
     render:function(r){
-      if(!compareOn) return '<td class="num">'+(r.zayav?'<span class="tag zayav">'+r.zayav+'</span>':'<span class="num-zero">·</span>')+'</td>';
+      if(!compareOn) return '<td class="num-center">'+(r.zayav?'<span class="tag zayav">'+r.zayav+'</span>':'<span class="num-zero">·</span>')+'</td>';
       return deltaCellNum(r.zayav, r.zayav_b);
     }});
-  cols.push({k:'pctBrak', label:'% брака', numeric:true,
-    render:function(r,maxPct){ return deltaCellPct(r.pctBrak, r.pctBrak_b, maxPct); }});
 
   if(compareOn){
-    cols.push({k:'deltaPctBrak', label:'Δ % брака', numeric:true,
+    cols.push({k:'deltaPctBrak', label:'Δ % брака',
       render:function(r){
         var d=r.deltaPctBrak;
         var cls=Math.abs(d)<0.05?'neu':(d>0?'up':'down');
         var arrow=Math.abs(d)<0.05?'→':(d>0?'↑':'↓');
-        return '<td class="num"><span class="cmp-delta '+cls+'" style="font-size:13px"><span class="cmp-arrow">'+arrow+'</span>'+(d===0?'0%':(d>0?'+':'')+d.toFixed(1)+'%')+'</span></td>';
+        return '<td class="num-center"><span class="cmp-delta '+cls+'" style="font-size:13px"><span class="cmp-arrow">'+arrow+'</span>'+(d===0?'0%':(d>0?'+':'')+d.toFixed(1)+'%')+'</span></td>';
       }});
   }
   return cols;
@@ -870,6 +1013,10 @@ function getColumns(){
 
 /* ============== HELPERS ============== */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+
+window.addEventListener('resize', function(){
+  Object.keys(charts).forEach(function(k){ try{ charts[k].resize(); }catch(e){} });
+});
 
 /* ============== INIT ============== */
 loadData();
